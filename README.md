@@ -41,12 +41,12 @@ Frame Extraction  ──►  ML Detector (EfficientNet-B4)  ──►  AI Score 
 
 1. **Frame Extraction** — OpenCV samples the video at a configurable rate (default every 30 frames, up to 40 frames total).
 2. **ML Detection** — Each frame is run through [`dima806/deepfake_vs_real_image_detection`](https://huggingface.co/dima806/deepfake_vs_real_image_detection) (EfficientNet-B4 trained on 190 k real/fake images) and gets an AI probability score (0 = human, 1 = AI).
-3. **Signal Extraction** — Four forensic signals are computed: texture uniformity, noise level, frequency artefacts, and colour uniformity.
+3. **Signal Extraction** — Multiple complementary forensic signals are computed per frame (texture/noise/frequency/colour + contrast, gradient, spectral, saturation, and regional consistency checks).
 4. **LLM Explanation** — The Groq API sends the frame image + score + signals to a vision-capable model which returns a natural-language forensic report.
-5. **Ensemble** — Mean score across all frames determines the final verdict:
-   - `>= 0.65` → **AI**
-   - `0.35 – 0.65` → **Uncertain**
-   - `< 0.35` → **Human**
+5. **Ensemble** — A video-level weighted fusion is used (mean ML score + forensic signals + top-quartile ML + temporal evidence from coverage/peak/persistence):
+   - `>= 0.50` → **AI**
+   - `0.30 – 0.50` → **Uncertain**
+   - `< 0.30` → **Human**
 
 ---
 
@@ -286,13 +286,20 @@ Poll for job status and results.
   ],
   "overall": {
     "overall_score": 0.756,
+    "ml_score": 0.741,
+    "signal_score": 0.702,
     "overall_verdict": "ai",
+    "confidence": "high",
+    "verdict_reasoning": "Combined score ...",
     "frame_count": 40,
     "ai_frame_count": 31,
     "uncertain_frame_count": 6,
     "human_frame_count": 3,
     "top_suspicious_frames": [7, 14, 22],
     "score_timeline": [0.823, 0.701, ...],
+    "ai_coverage": 0.775,
+    "peak_ml_score": 0.984,
+    "persistence_score": 0.225,
     "mean_signals": {
       "texture_uniformity": 0.88,
       "noise_level": 0.15,
