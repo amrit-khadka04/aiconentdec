@@ -18,14 +18,33 @@ const VERDICT_LABEL = {
   human: "LIKELY HUMAN",
 };
 
+const CONFIDENCE_COLOR = {
+  high: "var(--red)",
+  medium: "var(--amber)",
+  low: "var(--muted)",
+};
+
 export default function OverallScore({ overall, onReset }) {
   if (!overall) return null;
 
-  const { overall_score, overall_verdict, frame_count, ai_frame_count,
-          uncertain_frame_count, human_frame_count, mean_signals, score_timeline } = overall;
+  const {
+    overall_score,
+    ml_score,
+    signal_score,
+    overall_verdict,
+    confidence,
+    verdict_reasoning,
+    frame_count,
+    ai_frame_count,
+    uncertain_frame_count,
+    human_frame_count,
+    mean_signals,
+    score_timeline,
+  } = overall;
 
   const color = VERDICT_COLOR[overall_verdict] || "var(--muted)";
   const dim = VERDICT_DIM[overall_verdict] || "transparent";
+  const confColor = CONFIDENCE_COLOR[confidence] || "var(--muted)";
 
   return (
     <div
@@ -48,6 +67,7 @@ export default function OverallScore({ overall, onReset }) {
           gap: "24px",
         }}
       >
+        {/* Verdict + score */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
           <div>
             <p
@@ -68,10 +88,27 @@ export default function OverallScore({ overall, onReset }) {
                 fontSize: "32px",
                 fontWeight: 700,
                 color: color,
+                marginBottom: "8px",
               }}
             >
               {VERDICT_LABEL[overall_verdict] || overall_verdict.toUpperCase()}
             </h2>
+            {confidence && (
+              <span
+                style={{
+                  fontFamily: "var(--mono)",
+                  fontSize: "11px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                  color: confColor,
+                  border: `1px solid ${confColor}`,
+                  borderRadius: "100px",
+                  padding: "3px 10px",
+                }}
+              >
+                {confidence} confidence
+              </span>
+            )}
           </div>
           <div style={{ textAlign: "right" }}>
             <p
@@ -98,6 +135,22 @@ export default function OverallScore({ overall, onReset }) {
           </div>
         </div>
 
+        {/* Score breakdown: ML vs Signal */}
+        {(ml_score !== undefined || signal_score !== undefined) && (
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            <ScoreChip
+              label="ML MODEL"
+              value={ml_score}
+              color={ml_score >= 0.55 ? "var(--red)" : ml_score >= 0.30 ? "var(--amber)" : "var(--green)"}
+            />
+            <ScoreChip
+              label="SIGNAL SCORE"
+              value={signal_score}
+              color={signal_score >= 0.55 ? "var(--red)" : signal_score >= 0.30 ? "var(--amber)" : "var(--green)"}
+            />
+          </div>
+        )}
+
         {/* Frame breakdown */}
         <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
           <StatPill label="TOTAL" value={frame_count} color="var(--text)" />
@@ -105,6 +158,41 @@ export default function OverallScore({ overall, onReset }) {
           <StatPill label="UNCERTAIN" value={uncertain_frame_count} color="var(--amber)" />
           <StatPill label="HUMAN" value={human_frame_count} color="var(--green)" />
         </div>
+
+        {/* Verdict reasoning */}
+        {verdict_reasoning && (
+          <div
+            style={{
+              background: "var(--bg2)",
+              border: "1px solid var(--border)",
+              borderRadius: "8px",
+              padding: "12px 14px",
+            }}
+          >
+            <p
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: "9px",
+                textTransform: "uppercase",
+                color: "var(--muted)",
+                letterSpacing: "1px",
+                marginBottom: "6px",
+              }}
+            >
+              DETECTION REASONING
+            </p>
+            <p
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: "11px",
+                color: "var(--text)",
+                lineHeight: 1.6,
+              }}
+            >
+              {verdict_reasoning}
+            </p>
+          </div>
+        )}
 
         {/* Score timeline */}
         {score_timeline && score_timeline.length > 0 && (
@@ -131,8 +219,8 @@ export default function OverallScore({ overall, onReset }) {
                     height: `${Math.round(s * 100)}%`,
                     minHeight: "2px",
                     background:
-                      s >= 0.65 ? "var(--red)"
-                        : s >= 0.35 ? "var(--amber)"
+                      s >= 0.55 ? "var(--red)"
+                        : s >= 0.30 ? "var(--amber)"
                         : "var(--green)",
                     borderRadius: "2px 2px 0 0",
                     transition: "height 0.5s ease",
@@ -217,6 +305,47 @@ function StatPill({ label, value, color }) {
         }}
       >
         {value}
+      </span>
+      <span
+        style={{
+          fontFamily: "var(--mono)",
+          fontSize: "9px",
+          color: "var(--muted)",
+          textTransform: "uppercase",
+          letterSpacing: "1px",
+        }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function ScoreChip({ label, value, color }) {
+  if (value === undefined || value === null) return null;
+  return (
+    <div
+      style={{
+        background: "var(--bg2)",
+        border: `1px solid ${color}`,
+        borderRadius: "8px",
+        padding: "6px 14px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "2px",
+        minWidth: "90px",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "var(--mono)",
+          fontSize: "18px",
+          fontWeight: 700,
+          color: color,
+        }}
+      >
+        {Math.round(value * 100)}%
       </span>
       <span
         style={{

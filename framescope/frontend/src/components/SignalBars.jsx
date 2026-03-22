@@ -1,21 +1,28 @@
 const SIGNAL_LABELS = {
-  texture_uniformity: "TEXTURE",
-  noise_level: "NOISE",
-  frequency_artifact: "FREQUENCY",
-  color_uniformity: "COLOR",
+  texture_uniformity:     "TEXTURE",
+  noise_level:            "NOISE",
+  frequency_artifact:     "FREQUENCY",
+  color_uniformity:       "COLOR",
+  local_contrast_variance: "CONTRAST",
+  gradient_uniformity:    "GRADIENT",
+  spectral_irregularity:  "SPECTRAL",
+  saturation_variance:    "SATURATION",
 };
 
 function barColor(value) {
-  if (value >= 0.65) return "var(--red)";
-  if (value >= 0.35) return "var(--amber)";
+  if (value >= 0.55) return "var(--red)";
+  if (value >= 0.30) return "var(--amber)";
   return "var(--green)";
 }
 
 export default function SignalBars({ signals }) {
+  const entries = Object.entries(SIGNAL_LABELS).filter(
+    ([key]) => signals?.[key] != null
+  );
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      {Object.entries(SIGNAL_LABELS).map(([key, label]) => {
-        const value = signals?.[key] ?? 0;
+      {entries.map(([key, label]) => {
+        const value = signals[key];
         return (
           <div key={key} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span
@@ -23,7 +30,7 @@ export default function SignalBars({ signals }) {
                 fontFamily: "var(--mono)",
                 fontSize: "10px",
                 color: "var(--muted)",
-                width: "70px",
+                width: "76px",
                 flexShrink: 0,
               }}
             >

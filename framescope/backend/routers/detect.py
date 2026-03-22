@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Form
 
-from ensemble import compute_overall
+from ensemble import compute_overall, signal_score
 from job_store import _store, create_job, update_frame, complete_job, fail_job, get_job
 from services.frame_extractor import extract_frames, base64_to_pil
 from services.groq_explainer import explain_frame
@@ -80,20 +80,25 @@ async def run_job(
 
             async with ml_sem:
                 loop = asyncio.get_event_loop()
-                score = await loop.run_in_executor(None, detector.predict, pil)
+                ml_score = await loop.run_in_executor(None, detector.predict, pil)
 
             signals = compute_signals(pil)
 
+            # Combined per-frame score: 65% ML model + 35% forensic signals.
+            # Lowered AI threshold (0.55) catches more AI content while keeping
+            # a clear human boundary at 0.30.
+            combined = 0.65 * ml_score + 0.35 * signal_score(signals)
+
             verdict = (
-                "ai" if score >= 0.65
-                else "uncertain" if score >= 0.35
+                "ai" if combined >= 0.55
+                else "uncertain" if combined >= 0.30
                 else "human"
             )
 
             async with groq_sem:
                 explanation = await explain_frame(
                     frame_data["base64_jpeg"],
-                    score,
+                    ml_score,
                     verdict,
                     signals,
                     frame_data["timestamp_sec"],
@@ -102,11 +107,13 @@ async def run_job(
             result = {
                 "frame_index": frame_data["frame_index"],
                 "timestamp_sec": frame_data["timestamp_sec"],
-                "ai_score": round(score, 3),
+                "ai_score": round(combined, 3),
                 "verdict": verdict,
                 "signals": signals,
-                "reasons": explanation["reasons"],
-                "primary_evidence": explanation["primary_evidence"],
+                "reasons": explanation.get("reasons", []),
+                "primary_evidence": explanation.get("primary_evidence", ""),
+                "artifact_categories": explanation.get("artifact_categories", []),
+                "confidence": explanation.get("confidence", "medium"),
                 "base64_jpeg": frame_data["base64_jpeg"],
                 "width": frame_data["width"],
                 "height": frame_data["height"],
