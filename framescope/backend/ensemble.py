@@ -31,6 +31,26 @@ def signal_score(signals: dict) -> float:
 
 
 def compute_overall(frame_results: list) -> dict:
+    if not frame_results:
+        return {
+            "overall_score": 0.0,
+            "ml_score": 0.0,
+            "signal_score": 0.0,
+            "overall_verdict": "uncertain",
+            "confidence": "low",
+            "verdict_reasoning": "No frames were available for analysis.",
+            "frame_count": 0,
+            "ai_frame_count": 0,
+            "uncertain_frame_count": 0,
+            "human_frame_count": 0,
+            "top_suspicious_frames": [],
+            "score_timeline": [],
+            "mean_signals": {},
+            "ai_coverage": 0.0,
+            "peak_ml_score": 0.0,
+            "persistence_score": 0.0,
+        }
+
     # Use raw ML prediction scores for the ML component to avoid double-mixing
     # signals.  Per-frame results store both the raw ML score and the combined
     # score; fall back to ai_score (combined) if raw ml_score is unavailable.
@@ -51,24 +71,42 @@ def compute_overall(frame_results: list) -> dict:
     else:
         top_k_mean = mean_ml
 
-    # Combined overall score:
-    #   55% mean ML score       — primary deepfake classifier
-    #   30% mean signal score   — forensic heuristics add research-backed corrections
-    #   15% top-quartile ML     — pessimistic component; catches partially-AI videos
-    combined_score = round(
-        0.55 * mean_ml + 0.30 * mean_sig + 0.15 * top_k_mean, 3
-    )
-
     # Temporal consistency: stdev of per-frame combined scores for reporting.
     combined_scores = [f["ai_score"] for f in frame_results]
     score_stdev = _stats.stdev(combined_scores) if len(combined_scores) > 1 else 0.0
 
-    # Verdict thresholds — lowered to reduce false negatives (AI detected as human).
-    # Previously: AI ≥ 0.55, Uncertain ≥ 0.30.
-    # Now:        AI ≥ 0.48, Uncertain ≥ 0.28.
+    # Additional video-level evidence:
+    # - ai_coverage: proportion of strong-AI frames (handles partially AI videos)
+    # - peak_ml_score: strongest frame evidence in the video
+    # - persistence_score: longest contiguous AI-like segment as a fraction
+    ai_like = [1 if s >= 0.55 else 0 for s in raw_ml_scores]
+    ai_coverage = sum(ai_like) / len(ai_like)
+    peak_ml_score = max(raw_ml_scores)
+
+    max_streak = 0
+    streak = 0
+    for flag in ai_like:
+        if flag:
+            streak += 1
+            max_streak = max(max_streak, streak)
+        else:
+            streak = 0
+    persistence_score = max_streak / len(ai_like)
+
+    # Combined overall score:
+    #   55% mean ML score          — primary deepfake classifier
+    #   25% mean signal score      — forensic heuristics
+    #   10% top-quartile ML score  — pessimistic component
+    #   10% temporal/risk evidence — coverage + peak + persistence
+    temporal_risk = 0.4 * ai_coverage + 0.4 * peak_ml_score + 0.2 * persistence_score
+    combined_score = round(
+        0.55 * mean_ml + 0.25 * mean_sig + 0.10 * top_k_mean + 0.10 * temporal_risk, 3
+    )
+
+    # Verdict thresholds calibrated for the revised combined score.
     verdict = (
-        "ai" if combined_score >= 0.48
-        else "uncertain" if combined_score >= 0.28
+        "ai" if combined_score >= 0.50
+        else "uncertain" if combined_score >= 0.30
         else "human"
     )
 
@@ -99,7 +137,8 @@ def compute_overall(frame_results: list) -> dict:
     )[:3]
     verdict_reasoning = (
         f"Combined score {combined_score:.2f} "
-        f"(ML={mean_ml:.2f}, signals={mean_sig:.2f}, top-quartile ML={top_k_mean:.2f}). "
+        f"(ML={mean_ml:.2f}, signals={mean_sig:.2f}, top-quartile ML={top_k_mean:.2f}, "
+        f"coverage={ai_coverage:.2f}, peak={peak_ml_score:.2f}, persistence={persistence_score:.2f}). "
         f"Top indicators: "
         + ", ".join(f"{k.replace('_', ' ')} ({v:.2f})" for k, v in top_signals)
         + f". Score consistency: stdev={score_stdev:.2f}."
@@ -123,4 +162,7 @@ def compute_overall(frame_results: list) -> dict:
         "top_suspicious_frames": [f["frame_index"] for f in top3],
         "score_timeline": [round(s, 3) for s in combined_scores],
         "mean_signals": mean_signals,
+        "ai_coverage": round(ai_coverage, 3),
+        "peak_ml_score": round(peak_ml_score, 3),
+        "persistence_score": round(persistence_score, 3),
     }

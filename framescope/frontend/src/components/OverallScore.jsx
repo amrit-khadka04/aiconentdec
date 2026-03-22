@@ -138,18 +138,18 @@ export default function OverallScore({ overall, onReset }) {
         {/* Score breakdown: ML vs Signal */}
         {(ml_score !== undefined || signal_score !== undefined) && (
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <ScoreChip
-              label="ML MODEL"
-              value={ml_score}
-              color={ml_score >= 0.55 ? "var(--red)" : ml_score >= 0.30 ? "var(--amber)" : "var(--green)"}
-            />
-            <ScoreChip
-              label="SIGNAL SCORE"
-              value={signal_score}
-              color={signal_score >= 0.55 ? "var(--red)" : signal_score >= 0.30 ? "var(--amber)" : "var(--green)"}
-            />
-          </div>
-        )}
+              <ScoreChip
+                label="ML MODEL"
+                value={ml_score}
+                color={ml_score >= 0.50 ? "var(--red)" : ml_score >= 0.30 ? "var(--amber)" : "var(--green)"}
+              />
+              <ScoreChip
+                label="SIGNAL SCORE"
+                value={signal_score}
+                color={signal_score >= 0.50 ? "var(--red)" : signal_score >= 0.30 ? "var(--amber)" : "var(--green)"}
+              />
+            </div>
+          )}
 
         {/* Frame breakdown */}
         <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
@@ -219,7 +219,7 @@ export default function OverallScore({ overall, onReset }) {
                     height: `${Math.round(s * 100)}%`,
                     minHeight: "2px",
                     background:
-                      s >= 0.55 ? "var(--red)"
+                      s >= 0.50 ? "var(--red)"
                         : s >= 0.30 ? "var(--amber)"
                         : "var(--green)",
                     borderRadius: "2px 2px 0 0",

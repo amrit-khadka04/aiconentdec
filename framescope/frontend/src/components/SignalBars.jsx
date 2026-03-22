@@ -12,7 +12,7 @@ const SIGNAL_LABELS = {
 };
 
 function barColor(value) {
-  if (value >= 0.55) return "var(--red)";
+  if (value >= 0.50) return "var(--red)";
   if (value >= 0.30) return "var(--amber)";
   return "var(--green)";
 }

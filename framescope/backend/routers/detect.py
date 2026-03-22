@@ -90,8 +90,8 @@ async def run_job(
             combined = 0.65 * ml_score + 0.35 * signal_score(signals)
 
             verdict = (
-                "ai" if combined >= 0.48
-                else "uncertain" if combined >= 0.28
+                "ai" if combined >= 0.50
+                else "uncertain" if combined >= 0.30
                 else "human"
             )
 
