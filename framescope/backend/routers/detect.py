@@ -84,14 +84,14 @@ async def run_job(
 
             signals = compute_signals(pil)
 
-            # Combined per-frame score: 65% ML model + 35% forensic signals.
-            # Lowered AI threshold (0.55) catches more AI content while keeping
-            # a clear human boundary at 0.30.
+            # Combined per-frame score: 55% ML model + 30% forensic signals + 15% pessimistic.
+            # For per-frame scoring we use a simpler 65/35 split (no top-k available
+            # at single-frame level) with lowered AI threshold to reduce false negatives.
             combined = 0.65 * ml_score + 0.35 * signal_score(signals)
 
             verdict = (
-                "ai" if combined >= 0.55
-                else "uncertain" if combined >= 0.30
+                "ai" if combined >= 0.48
+                else "uncertain" if combined >= 0.28
                 else "human"
             )
 
@@ -107,6 +107,7 @@ async def run_job(
             result = {
                 "frame_index": frame_data["frame_index"],
                 "timestamp_sec": frame_data["timestamp_sec"],
+                "ml_score": round(ml_score, 3),
                 "ai_score": round(combined, 3),
                 "verdict": verdict,
                 "signals": signals,
