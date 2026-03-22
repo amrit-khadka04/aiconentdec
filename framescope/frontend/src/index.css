@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg:        #07090f;
+  --bg2:       #0c0f1a;
+  --card:      #101420;
+  --card-hi:   #161c2e;
+  --border:    rgba(255,255,255,0.07);
+  --border-hi: rgba(255,255,255,0.14);
+  --blue:      #3b82f6;
+  --red:       #ef4444;
+  --green:     #22c55e;
+  --amber:     #f59e0b;
+  --text:      #dde3f0;
+  --muted:     #4a5568;
+  --dim:       #1e2435;
+  --mono:      'IBM Plex Mono', monospace;
+  --display:   'Syne', sans-serif;
+  --body:      'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 24px rgba(239, 68, 68, 0.4); }
+  50%       { box-shadow: 0 0 40px rgba(239, 68, 68, 0.8); }
+}
