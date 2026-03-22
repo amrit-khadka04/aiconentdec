@@ -19,12 +19,29 @@ const VERDICT_LABEL = {
   human: "LIKELY HUMAN",
 };
 
+const CONFIDENCE_COLOR = {
+  high: "var(--red)",
+  medium: "var(--amber)",
+  low: "var(--muted)",
+};
+
 export default function FrameCard({ frameResult, isSuspicious }) {
-  const { frame_index, timestamp_sec, ai_score, verdict, signals, base64_jpeg } =
-    frameResult;
+  const {
+    frame_index,
+    timestamp_sec,
+    ai_score,
+    verdict,
+    signals,
+    base64_jpeg,
+    reasons,
+    primary_evidence,
+    artifact_categories,
+    confidence,
+  } = frameResult;
 
   const color = VERDICT_COLOR[verdict] || "var(--muted)";
   const dim = VERDICT_DIM[verdict] || "transparent";
+  const confColor = CONFIDENCE_COLOR[confidence] || "var(--muted)";
 
   return (
     <motion.div
@@ -152,7 +169,138 @@ export default function FrameCard({ frameResult, isSuspicious }) {
         </span>
       </div>
 
-      {/* SECTION C: Signals */}
+      {/* SECTION C: Primary evidence + LLM analysis */}
+      {(primary_evidence || (reasons && reasons.length > 0)) && (
+        <div
+          style={{
+            padding: "12px 14px",
+            borderTop: "1px solid var(--border)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "8px",
+            }}
+          >
+            <p
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: "9px",
+                textTransform: "uppercase",
+                color: "var(--muted)",
+                letterSpacing: "1px",
+              }}
+            >
+              FORENSIC ANALYSIS
+            </p>
+            {confidence && (
+              <span
+                style={{
+                  fontFamily: "var(--mono)",
+                  fontSize: "9px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                  color: confColor,
+                  border: `1px solid ${confColor}`,
+                  borderRadius: "100px",
+                  padding: "2px 7px",
+                }}
+              >
+                {confidence} confidence
+              </span>
+            )}
+          </div>
+
+          {/* Primary evidence */}
+          {primary_evidence && (
+            <p
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: "11px",
+                color: color,
+                marginBottom: reasons && reasons.length > 0 ? "8px" : 0,
+                lineHeight: 1.5,
+              }}
+            >
+              ▶ {primary_evidence}
+            </p>
+          )}
+
+          {/* Reason list */}
+          {reasons && reasons.length > 0 && (
+            <ul
+              style={{
+                margin: 0,
+                padding: 0,
+                listStyle: "none",
+                display: "flex",
+                flexDirection: "column",
+                gap: "5px",
+              }}
+            >
+              {reasons.map((r, i) => (
+                <li
+                  key={i}
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: "10px",
+                    color: "var(--muted)",
+                    lineHeight: 1.5,
+                    paddingLeft: "12px",
+                    position: "relative",
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      color: "var(--border-hi)",
+                    }}
+                  >
+                    ·
+                  </span>
+                  {r}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Artifact category tags */}
+          {artifact_categories && artifact_categories.length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "4px",
+                marginTop: "8px",
+              }}
+            >
+              {artifact_categories.map((cat) => (
+                <span
+                  key={cat}
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: "9px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    color: "var(--muted)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "4px",
+                    padding: "2px 6px",
+                  }}
+                >
+                  {cat}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SECTION D: Signals */}
       <div
         style={{
           padding: "12px 14px",

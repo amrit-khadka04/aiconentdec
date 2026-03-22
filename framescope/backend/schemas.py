@@ -10,6 +10,8 @@ class FrameResult(BaseModel):
     signals: dict[str, float]
     reasons: list[str]
     primary_evidence: str
+    artifact_categories: list[str]
+    confidence: str
     base64_jpeg: str
     width: int
     height: int
@@ -17,7 +19,11 @@ class FrameResult(BaseModel):
 
 class OverallResult(BaseModel):
     overall_score: float
+    ml_score: float
+    signal_score: float
     overall_verdict: str
+    confidence: str
+    verdict_reasoning: str
     frame_count: int
     ai_frame_count: int
     uncertain_frame_count: int
