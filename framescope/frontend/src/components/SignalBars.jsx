@@ -1,12 +1,14 @@
 const SIGNAL_LABELS = {
-  texture_uniformity:     "TEXTURE",
-  noise_level:            "NOISE",
-  frequency_artifact:     "FREQUENCY",
-  color_uniformity:       "COLOR",
-  local_contrast_variance: "CONTRAST",
-  gradient_uniformity:    "GRADIENT",
-  spectral_irregularity:  "SPECTRAL",
-  saturation_variance:    "SATURATION",
+  texture_uniformity:             "TEXTURE",
+  noise_level:                    "NOISE",
+  frequency_artifact:             "FREQUENCY",
+  color_uniformity:               "COLOR",
+  local_contrast_variance:        "CONTRAST",
+  gradient_uniformity:            "GRADIENT",
+  spectral_irregularity:          "SPECTRAL",
+  saturation_variance:            "SATURATION",
+  regional_noise_inconsistency:   "NOISE REGION",
+  radial_spectral_slope:          "SPEC SLOPE",
 };
 
 function barColor(value) {
